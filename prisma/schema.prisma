@@ -1,0 +1,306 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  phone     String?
+  role      String   @default("user")
+  avatar    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quotations    Quotation[]
+  activities    Activity[]
+  notifications Notification[]
+}
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  company   String?
+  address   String?
+  gstNumber String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quotations Quotation[]
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  icon      String?
+  color     String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id            String   @id @default(uuid())
+  name          String
+  description   String?
+  sku           String?  @unique
+  brand         String?
+  modelNumber   String?
+  specifications String?
+  subCategory   String?
+  costPrice     Float?
+  unit          String   @default("nos")
+  rate          Float
+  gstRate       Float    @default(18.0)
+  hsnCode       String?
+  image         String?
+  isActive      Boolean  @default(true)
+  categoryId    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  category     Category?  @relation(fields: [categoryId], references: [id])
+  quoteItems   QuoteItem[]
+  packageItems PackageItem[]
+}
+
+model Vertical {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  solutions Solution[]
+}
+
+model Solution {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  verticalId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  vertical   Vertical @relation(fields: [verticalId], references: [id])
+  packages   Package[]
+  quoteItems QuoteItem[]
+}
+
+model Package {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  solutionId  String
+  basePrice   Float    @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  solution Solution      @relation(fields: [solutionId], references: [id])
+  items    PackageItem[]
+}
+
+model PackageItem {
+  id        String  @id @default(uuid())
+  packageId String
+  productId String
+  quantity  Float   @default(1)
+  rate      Float
+  discount  Float   @default(0)
+
+  package Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Quotation {
+  id                 String   @id @default(uuid())
+  quoteNumber        String   @unique
+  title              String
+  description        String?
+  status             String   @default("draft")
+  revision           Int      @default(1)
+  validTill          DateTime?
+  quoteDate          DateTime @default(now())
+  discountType       String   @default("percentage")
+  discountValue      Float    @default(0)
+  additionalCharges  Float    @default(0)
+  shippingCharges    Float    @default(0)
+  installationCharge Float    @default(0)
+  taxExcluded        Boolean  @default(false)
+  notes              String?
+  terms              String?
+  rejectionReason    String?
+
+  projectName        String?
+  projectRef         String?
+  siteAddress        String?
+  contactPerson      String?
+  phone              String?
+  email              String?
+  preparedBy         String?
+  paymentTerms       String?
+  deliveryTimeline   String?
+  warranty           String?
+  installationScope  String?
+  exclusions         String?
+  assumptions        String?
+  technicalNotes     String?
+  authorizedSignatory String?
+
+  followUpDate       DateTime?
+  responseDeadline   DateTime?
+  submittedAt        DateTime?
+
+  subtotal           Float    @default(0)
+  gstAmount          Float    @default(0)
+  discountAmount     Float    @default(0)
+  grandTotal         Float    @default(0)
+
+  parentQuotationId  String?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  userId     String
+  customerId String
+
+  user       User     @relation(fields: [userId], references: [id])
+  customer   Customer @relation(fields: [customerId], references: [id])
+  items      QuoteItem[]
+  revisions  Revision[]
+  notifications Notification[]
+
+  @@index([status])
+  @@index([userId])
+  @@index([followUpDate])
+  @@index([responseDeadline])
+}
+
+model QuoteItem {
+  id            String  @id @default(uuid())
+  quotationId   String
+  productId     String?
+  solutionId    String?
+  itemType      String  @default("ITEM")
+  description   String
+  brand         String?
+  modelNumber   String?
+  specifications String?
+  hsnCode       String?
+  unit          String  @default("nos")
+  quantity      Float   @default(1)
+  rate          Float
+  discount      Float   @default(0)
+  gstRate       Float   @default(18.0)
+  installationRate Float @default(0)
+  isOptional    Boolean @default(false)
+  lineTotal     Float   @default(0)
+  sortOrder     Int     @default(0)
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  product   Product?  @relation(fields: [productId], references: [id])
+  solution  Solution? @relation(fields: [solutionId], references: [id])
+}
+
+model Revision {
+  id          String   @id @default(uuid())
+  quotationId String
+  revision    Int
+  changeNotes String?
+  snapshot    String
+  createdAt   DateTime @default(now())
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+}
+
+model Activity {
+  id        String   @id @default(uuid())
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  details   String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model CompanySetting {
+  id                   String   @id @default("singleton")
+  companyName          String   @default("Your Company Name")
+  address              String?
+  phone                String?
+  email                String?
+  gstNumber            String?
+  panNumber            String?
+  cinNumber            String?
+  website              String?
+  instagramUrl         String?
+  linkedinUrl          String?
+  bankName             String?
+  bankAccountName      String?
+  bankAccountNumber    String?
+  bankIfsc             String?
+  bankBranch           String?
+  bankUpiId            String?
+  bankQrPath           String?
+  logoPath             String?
+  signaturePath        String?
+  currency             String   @default("INR")
+  locale               String   @default("en-IN")
+  defaultGstRate       Float    @default(18.0)
+  defaultValidityDays  Int      @default(30)
+  defaultTerms         String?
+  defaultNotes         String?
+  quoteNumberPrefix    String   @default("QT")
+  reminderDays         String   @default("[7,3,1]")
+  requireApproval      Boolean  @default(true)
+  includeCertificates  Boolean  @default(false)
+  updatedAt            DateTime @updatedAt
+
+  assets CompanyAsset[]
+}
+
+model CompanyAsset {
+  id        String   @id @default(uuid())
+  type      String
+  name      String
+  path      String
+  isActive  Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  settings CompanySetting @relation(fields: [settingsId], references: [id])
+  settingsId String       @default("singleton")
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  userId      String
+  type        String
+  title       String
+  body        String?
+  quotationId String?
+  dueDate     DateTime?
+  readAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quotation Quotation? @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([quotationId])
+}
