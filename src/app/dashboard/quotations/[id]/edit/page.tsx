@@ -86,7 +86,7 @@ export default function EditQuotationPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
-  const [canAssign, setCanAssign] = useState(false);
+  const canAssign = getStoredUser()?.role === "admin";
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
@@ -171,7 +171,6 @@ export default function EditQuotationPage() {
     }).catch(() => setLoading(false));
     const me = getStoredUser();
     if (me?.role === "admin") {
-      setCanAssign(true);
       apiFetch<UserOption[]>("/api/users").then(setUsers).catch(() => {});
     }
   }, [params.id]);

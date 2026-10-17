@@ -59,7 +59,7 @@ export default function NewQuotationPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
-  const [canAssign, setCanAssign] = useState(false);
+  const canAssign = getStoredUser()?.role === "admin";
   const [saving, setSaving] = useState(false);
   const [showCustomerForm, setShowCustomerForm] = useState(false);
 
@@ -133,7 +133,6 @@ export default function NewQuotationPage() {
     ]).then(([p, c, s]) => { setProducts(p); setCustomers(c); setSolutions(s); }).catch(() => {});
     const me = getStoredUser();
     if (me?.role === "admin") {
-      setCanAssign(true);
       apiFetch<UserOption[]>("/api/users")
         .then((u) => {
           setUsers(u);
